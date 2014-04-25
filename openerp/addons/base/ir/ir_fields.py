@@ -14,8 +14,9 @@ from openerp.tools.misc import DEFAULT_SERVER_DATE_FORMAT,\
                                DEFAULT_SERVER_DATETIME_FORMAT,\
                                ustr
 from openerp.tools import html_sanitize
+from openerp.tools.safe_eval import safe_eval as eval
 
-REFERENCING_FIELDS = set([None, 'id', '.id'])
+REFERENCING_FIELDS = set([None, 'id', '.id', '.domain'])
 def only_ref_fields(record):
     return dict((k, v) for k, v in record.iteritems()
                 if k in REFERENCING_FIELDS)
@@ -336,6 +337,15 @@ class ir_fields_converter(orm.Model):
                         _(u"Found multiple matches for field '%%(field)s' (%d matches)")
                         % (len(ids))))
                 id, _name = ids[0]
+        elif subfield == '.domain':
+            field_type = _(u"domain")
+            try:
+                ids = RelatedModel.search(cr, uid, eval(value), context=context)
+                if ids:
+                    id = ids[0]
+            except ValueError:
+                raise ValueError(
+                    _(u"Invalid domain '%s'") % value, {'moreinfo': action})
         else:
             raise Exception(_(u"Unknown sub-field '%s'") % subfield)
 

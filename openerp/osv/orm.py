@@ -1422,12 +1422,14 @@ class BaseModel(object):
         * None is the name_get for the record (to use with name_create/name_search)
         * "id" is the External ID for the record
         * ".id" is the Database ID for the record
+        * ".domain" is a domain expression for the record
         """
         columns = dict((k, v.column) for k, v in self._all_columns.iteritems())
         # Fake columns to avoid special cases in extractor
         columns[None] = fields.char('rec_name')
         columns['id'] = fields.char('External ID')
         columns['.id'] = fields.integer('Database ID')
+        columns['.domain'] = fields.char('Domain')
 
         # m2o fields can't be on multiple lines so exclude them from the
         # is_relational field rows filter, but special-case it later on to
@@ -1539,6 +1541,23 @@ class BaseModel(object):
                         field='.id',
                         message=_(u"Unknown database identifier '%s'") % dbid))
                     dbid = False
+            if '.domain' in record:
+                try:
+                    dbids = self.search(cr, uid, eval(record['.domain']), context=context)
+                    if not dbids:
+                        log(dict(extras,
+                            type='error',
+                            record=stream.index,
+                            field='.domain',
+                            message=_(u"Domain did not match record '%s'") % record['.domain']))
+                    else:
+                        dbid = dbids[0]
+                except ValueError:
+                    log(dict(extras,
+                        type='error',
+                        record=stream.index,
+                        field='.domain',
+                        message=_(u"Domain could not be parsed '%s'") % record['.domain']))
 
             converted = convert(record, lambda field, err:\
                 _log(dict(extras, record=stream.index, field=field_names[field]), field, err))
