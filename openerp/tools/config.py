@@ -279,7 +279,7 @@ class configmanager(object):
 
         group = optparse.OptionGroup(parser, "Multiprocessing options")
         # TODO sensible default for the three following limits.
-        group.add_option("--workers", dest="workers", my_default=0,
+        group.add_option("--workers", dest="workers", my_default=None,
                          help="Specify the number of workers, 0 disable prefork mode.",
                          type="int")
         group.add_option("--limit-memory-soft", dest="limit_memory_soft", my_default=640 * 1024 * 1024,

@@ -254,7 +254,7 @@ def main(args):
         setup_pid_file()
         # Some module register themselves when they are loaded so we need the
         # services to be running before loading any registry.
-        if config['workers']:
+        if config['workers'] is not None:
             openerp.service.start_services_workers()
         else:
             openerp.service.start_services()

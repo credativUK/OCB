@@ -35,7 +35,7 @@ class Multicorn(object):
     def __init__(self, app):
         # config
         self.address = (config['xmlrpc_interface'] or '0.0.0.0', config['xmlrpc_port'])
-        self.population = config['workers']
+        self.population = config['workers'] or 0
         self.timeout = config['limit_time_real']
         self.limit_request = config['limit_request']
         # working vars
@@ -48,6 +48,7 @@ class Multicorn(object):
         self.workers = {}
         self.generation = 0
         self.queue = []
+        self.socket = None
 
     def pipe_new(self):
         pipe = os.pipe()
@@ -172,12 +173,13 @@ class Multicorn(object):
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
         signal.signal(signal.SIGCHLD, self.signal_handler)
-        # listen to socket
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.setblocking(0)
-        self.socket.bind(self.address)
-        self.socket.listen(8*self.population)
+        if self.population:
+            # listen to socket
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.socket.setblocking(0)
+            self.socket.bind(self.address)
+            self.socket.listen(8*self.population)
 
     def stop(self, graceful=True):
         if graceful:
@@ -197,7 +199,8 @@ class Multicorn(object):
             _logger.info("Stopping forcefully")
         for pid in self.workers.keys():
             self.worker_kill(pid, signal.SIGTERM)
-        self.socket.close()
+	if self.socket:
+            self.socket.close()
         openerp.cli.server.quit_signals_received = 1
 
     def run(self):
@@ -290,11 +293,12 @@ class Worker(object):
         _logger.info("Worker %s (%s) alive", self.__class__.__name__, self.pid)
         # Reseed the random number generator
         random.seed()
-        # Prevent fd inherientence close_on_exec
-        flags = fcntl.fcntl(self.multi.socket, fcntl.F_GETFD) | fcntl.FD_CLOEXEC
-        fcntl.fcntl(self.multi.socket, fcntl.F_SETFD, flags)
-        # reset blocking status
-        self.multi.socket.setblocking(0)
+        if self.multi.socket:
+            # Prevent fd inherientence close_on_exec
+            flags = fcntl.fcntl(self.multi.socket, fcntl.F_GETFD) | fcntl.FD_CLOEXEC
+            fcntl.fcntl(self.multi.socket, fcntl.F_SETFD, flags)
+            # reset blocking status
+            self.multi.socket.setblocking(0)
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
