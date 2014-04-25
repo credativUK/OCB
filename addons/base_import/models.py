@@ -111,6 +111,7 @@ class ir_import(orm.TransientModel):
                 f['fields'] = [
                     dict(f, name='id', string=_("External ID")),
                     dict(f, name='.id', string=_("Database ID")),
+                    dict(f, name='.domain', string=_("Domain")),
                 ]
             elif field['type'] == 'one2many' and depth:
                 f['fields'] = self.get_fields(
