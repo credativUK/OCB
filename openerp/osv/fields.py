@@ -552,7 +552,6 @@ class one2many(_column):
         if self._context:
             context = context.copy()
         context.update(self._context)
-        context['no_store_function'] = True
         if not values:
             return
         _table = obj.pool.get(self._obj)._table
