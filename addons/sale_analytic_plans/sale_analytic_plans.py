@@ -42,9 +42,9 @@ sale_order_line()
 class sale_order(osv.osv):
     _inherit = "sale.order"
 
-    def onchange_shop_id(self, cr, uid, ids, shop_id, context=None):
+    def onchange_shop_id(self, cr, uid, ids, shop_id, partner_id=None, context=None):
         # Remove the project_id from the result of super() call, if any, as this field is not in the view anymore
-        res = super(sale_order, self).onchange_shop_id(cr, uid, ids, shop_id, context=context)
+        res = super(sale_order, self).onchange_shop_id(cr, uid, ids, shop_id, partner_id, context=context)
         if res.get('value',{}).get('project_id'):
             del(res['value']['project_id'])
         return res

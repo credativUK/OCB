@@ -56,7 +56,7 @@ class sale_order(osv.osv):
         },
     }
 
-    def onchange_shop_id(self, cr, uid, ids, shop_id, context=None):
+    def onchange_shop_id(self, cr, uid, ids, shop_id, partner_id=None, context=None):
         v = {}
         if shop_id:
             shop = self.pool.get('sale.shop').browse(cr, uid, shop_id, context=context)
@@ -64,6 +64,9 @@ class sale_order(osv.osv):
                 v['project_id'] = shop.project_id.id
             if shop.pricelist_id.id:
                 v['pricelist_id'] = shop.pricelist_id.id
+        if partner_id:
+            partner=self.pool.get('res.partner').browse(cr, uid,partner_id, context=context)
+            v['pricelist_id'] = partner.property_product_pricelist and partner.property_product_pricelist.id or False
         return {'value': v}
 
     def copy(self, cr, uid, id, default=None, context=None):
