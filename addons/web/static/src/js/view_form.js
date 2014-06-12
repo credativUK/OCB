@@ -2309,14 +2309,15 @@ instance.web.form.FieldChar = instance.web.form.AbstractField.extend(instance.we
     },
     render_value: function() {
         var show_value = this.format_value(this.get('value'), '');
-        if (!this.get("effective_readonly")) {
-            this.$el.find('input').val(show_value);
-        } else {
+        if (this.get("effective_readonly")) {
             if (this.password) {
                 show_value = new Array(show_value.length + 1).join('*');
             }
-            this.$(".oe_form_char_content").text(show_value);
+            if (this.get("effective_invisible") && this.get("readonly") && !this.get("invisible") && this.name != "sequence") {
+                this.set({"effective_invisible": false});
+            }
         }
+        this.$el.find('input').val(show_value);
     },
     is_syntax_valid: function() {
         if (!this.get("effective_readonly") && this.$("input").size() > 0) {
