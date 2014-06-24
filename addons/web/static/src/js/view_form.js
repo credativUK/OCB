@@ -2318,6 +2318,7 @@ instance.web.form.FieldChar = instance.web.form.AbstractField.extend(instance.we
             }
         }
         this.$el.find('input').val(show_value);
+        this.$(".oe_form_char_content").text(show_value);
     },
     is_syntax_valid: function() {
         if (!this.get("effective_readonly") && this.$("input").size() > 0) {
