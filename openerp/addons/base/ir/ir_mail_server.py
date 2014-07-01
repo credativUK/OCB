@@ -410,6 +410,10 @@ class ir_mail_server(osv.osv):
         :return: the Message-ID of the message that was just sent, if successfully sent, otherwise raises
                  MailDeliveryException and logs root cause.
         """
+
+        if context is None:
+            context = {}
+
         # Use the default bounce address **only if** no Return-Path was
         # provided by caller.  Caller may be using Variable Envelope Return
         # Path (VERP) to detect no-longer valid email addresses.
@@ -439,6 +443,7 @@ class ir_mail_server(osv.osv):
 
         # Get SMTP Server Details from Mail Server
         mail_server = None
+        mail_server_id = mail_server_id or context.get('mail_server_id', False)
         if mail_server_id:
             mail_server = self.browse(cr, SUPERUSER_ID, mail_server_id)
         elif not smtp_server:
