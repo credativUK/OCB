@@ -467,7 +467,12 @@ openerp.web.pyeval = function (instance) {
         },
         fromJSON: function (year, month, day) {
             return py.PY_call(datetime.date, [year, month, day])
-        }
+        },
+        today: py.classmethod.fromJSON(function () {
+            var d = new Date;
+            return py.PY_call(datetime.date, [
+                d.getFullYear(), d.getMonth() + 1, d.getDate()]);
+        }),
     });
     /**
         Returns the current local date, which means the date on the client (which can be different
@@ -841,6 +846,55 @@ openerp.web.pyeval = function (instance) {
                 d.resolve({
                     context: instance.web.pyeval.eval('contexts', contexts),
                     domain: instance.web.pyeval.eval('domains', source.domains),
+                    group_by: instance.web.pyeval.eval('groupbys', source.group_by_seq || [])
+                });
+            } catch (e) {
+                d.resolve({ error: {
+                    code: 400,
+                    message: instance.web._t("Evaluation Error"),
+                    data: {
+                        type: 'local_exception',
+                        debug: _.str.sprintf(
+                                instance.web._t("Local evaluation failure\n%s\n\n%s"),
+                                e.message, JSON.stringify(source))
+                    }
+                }});
+            }
+        }, 0); });
+    };
+    instance.web.pyeval.eval_nodomains_and_contexts = function (source) {
+        var detokenize_basic = function(tokens) {
+            var token_string = "";
+            for (var t in tokens) {
+                if (tokens[t].id == '(end)') {
+                } else if (tokens[t].id == '(string)') {
+                    token_string += '"' + tokens[t].value.replace('"', '\\"') + '"';
+                } else if (tokens[t].value) {
+                    token_string += tokens[t].value;
+                } else {
+                    token_string += tokens[t].id;
+                }
+            }
+            return token_string;
+        };
+        var domain_concat = function(domains) {
+            var domain_tokens = py.tokenize("[]").slice(0,1);
+            for(var d in domains) {
+                $.merge(domain_tokens, py.tokenize(domains[d]).slice(1,-2));
+                if (domain_tokens.slice(-1)[0].id != ",") {
+                    $.merge(domain_tokens, py.tokenize(",").slice(0,1));
+                }
+            }
+            $.merge(domain_tokens, py.tokenize("[]").slice(1));
+            return domain_tokens;
+        };
+        return new $.Deferred(function (d) {setTimeout(function () {
+            try {
+                var contexts = ([instance.session.user_context] || []).concat(source.contexts);
+                // see Session.eval_context in Python
+                d.resolve({
+                    context: instance.web.pyeval.eval('contexts', contexts),
+                    domain: detokenize_basic(domain_concat(source.domains)),
                     group_by: instance.web.pyeval.eval('groupbys', source.group_by_seq || [])
                 });
             } catch (e) {

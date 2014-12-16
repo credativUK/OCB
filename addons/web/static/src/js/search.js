@@ -1750,12 +1750,14 @@ instance.web.search.CustomFilters = instance.web.search.Input.extend({
         var $name = this.$('input:first');
         var private_filter = !this.$('#oe_searchview_custom_public').prop('checked');
         var set_as_default = this.$('#oe_searchview_custom_default').prop('checked');
+        var no_eval = this.$('#oe_searchview_custom_noevaluate').prop('checked');
         if (_.isEmpty($name.val())){
             this.do_warn(_t("Error"), _t("Filter name is required."));
             return false;
         }
         var search = this.view.build_search_data();
-        instance.web.pyeval.eval_domains_and_contexts({
+        var eval_func = no_eval ? instance.web.pyeval.eval_nodomains_and_contexts : instance.web.pyeval.eval_domains_and_contexts;
+        eval_func({
             domains: search.domains,
             contexts: search.contexts,
             group_by_seq: search.groupbys || []
