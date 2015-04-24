@@ -2958,7 +2958,16 @@ instance.web.form.CompletionFieldMixin = {
                     label: _t("Search More..."),
                     action: function() {
                         dataset.name_search(search_val, self.build_domain(), 'ilike', 160).done(function(data) {
-                            self._search_create_popup("search", data);
+                            var pop = self._search_create_popup("search", data);
+                            if (search_val != "") {
+                                pop.on("popup_search_view_loaded", self, function(popup) {
+                                    popup.searchview.complete_global_search({term: search_val}, function(values) {
+                                        _.each(values, function(value) {
+                                            value.facet.field.view.query.add(value.facet);
+                                        });
+                                    });
+                                });
+                            }
                         });
                     },
                     classname: 'oe_m2o_dropdown_option'
@@ -3027,6 +3036,8 @@ instance.web.form.CompletionFieldMixin = {
             self.add_id(element_ids[0]);
             self.focus();
         });
+
+        return pop;
     },
     /**
      * To implement.
@@ -4852,6 +4863,7 @@ instance.web.form.SelectCreatePopup = instance.web.form.AbstractFormPopup.extend
             }
         });
         this.searchview.on("search_view_loaded", self, function() {
+            self.trigger("popup_search_view_loaded", self);
             self.view_list = new instance.web.form.SelectCreateListView(self,
                     self.dataset, false,
                     _.extend({'deletable': false,
