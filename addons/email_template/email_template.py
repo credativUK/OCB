@@ -505,6 +505,7 @@ class email_template(osv.osv):
             # Add report in attachments: generate once for all template_res_ids
             if template.report_template:
                 for res_id in template_res_ids:
+                    ctx.update({'active_id': res_id, 'active_ids': [res_id, ]})
                     attachments = []
                     report_name = self.render_template(cr, uid, template.report_name, template.model, res_id, context=ctx)
                     report = report_xml_pool.browse(cr, uid, template.report_template.id, context)
