@@ -935,17 +935,19 @@ class stock_picking(osv.osv):
         "Done" pressed on a Picking view). 
         @return: True
         """
-        for pick in self.browse(cr, uid, ids, context=context):
+        move_obj = self.pool.get('stock.move')
+        for id in ids:
+            move_ids = self.read(cr, uid, id, ['move_lines'], context=context)['move_lines']
             todo = []
-            for move in pick.move_lines:
-                if move.state == 'draft':
-                    self.pool.get('stock.move').action_confirm(cr, uid, [move.id],
+            for move in move_obj.read(cr, uid, move_ids, ['state'], context=context):
+                if move['state'] == 'draft':
+                    move_obj.action_confirm(cr, uid, [move['id']],
                         context=context)
-                    todo.append(move.id)
-                elif move.state in ('assigned','confirmed'):
-                    todo.append(move.id)
+                    todo.append(move['id'])
+                elif move['state'] in ('assigned','confirmed'):
+                    todo.append(move['id'])
             if len(todo):
-                self.pool.get('stock.move').action_done(cr, uid, todo,
+                move_obj.action_done(cr, uid, todo,
                         context=context)
         return True
 
@@ -2444,14 +2446,12 @@ class stock_move(osv.osv):
         if context is None:
             context = {}
 
-        todo = []
-        for move in self.browse(cr, uid, ids, context=context):
-            if move.state=="draft":
-                todo.append(move.id)
+        todo = self.search(cr, uid, [('id', 'in', ids), ('state', '=', 'draft')], context=context)
         if todo:
             self.action_confirm(cr, uid, todo, context=context)
 
-        for move in self.browse(cr, uid, ids, context=context):
+        for move_id in ids:
+            move = self.browse(cr, uid, move_id, context=context)
             if move.state in ['done','cancel']:
                 continue
             move_ids.append(move.id)
