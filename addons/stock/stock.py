@@ -2248,6 +2248,7 @@ class stock_move(osv.osv):
         """ Cancels the moves and if all moves are cancelled it cancels the picking.
         @return: True
         """
+        wf_service = netsvc.LocalService("workflow")
         if not len(ids):
             return True
         if context is None:
@@ -2265,10 +2266,10 @@ class stock_move(osv.osv):
         self.write(cr, uid, ids, {'state': 'cancel', 'move_dest_id': False}, context=context)
         if not context.get('call_unlink',False):
             for pick in self.pool.get('stock.picking').browse(cr, uid, list(pickings), context=context):
+                wf_service.trg_write(uid, 'stock.picking', pick.id, cr)
                 if all(move.state == 'cancel' for move in pick.move_lines):
                     self.pool.get('stock.picking').write(cr, uid, [pick.id], {'state': 'cancel'}, context=context)
 
-        wf_service = netsvc.LocalService("workflow")
         for id in ids:
             wf_service.trg_trigger(uid, 'stock.move', id, cr)
         return True
