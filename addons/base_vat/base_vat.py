@@ -154,7 +154,7 @@ class res_partner(osv.osv):
                 return '\n' + _('This VAT number either failed the VIES VAT validation check or did not respect the expected format %s.') % vat_no
         return '\n' + _('This VAT number does not seem to be valid.\nNote: the expected format is %s') % vat_no
 
-    _constraints = [(check_vat, _construct_constraint_msg, ["vat"])]
+    #_constraints = [(check_vat, _construct_constraint_msg, ["vat"])]
 
 
     __check_vat_ch_re1 = re.compile(r'(MWST|TVA|IVA)[0-9]{6}$')
