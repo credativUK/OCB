@@ -1801,9 +1801,23 @@ class stock_move(osv.osv):
         'date_expected': lambda *a: time.strftime('%Y-%m-%d %H:%M:%S'),
     }
 
+    def create(self, cr, uid, vals, context=None):
+        if not vals.get('price_unit') or not vals.get('price_unit_net'):
+            if self.pool.get('product.product').read(cr, uid, vals['product_id'], ['procure_method'], context=context)['procure_method'] == 'make_to_order':
+                import traceback
+                stack = ''.join(traceback.format_stack())
+                _logger.warning('Should not be creating a move with price 0: %s' % (vals,))
+                _logger.warning('Stack:\n%s' % stack)
+        return super(stock_move, self).create(cr, uid, vals, context=context)
+
     def write(self, cr, uid, ids, vals, context=None):
         if isinstance(ids, (int, long)):
             ids = [ids]
+        if vals.get('price_unit', None) == 0 or vals.get('price_unit_net', None) == 0:
+            import traceback
+            stack = ''.join(traceback.format_stack())
+            _logger.warning('Should not be setting move price to 0 on %s: %s' % (ids, vals))
+            _logger.warning('Stack:\n%s' % stack)
         if uid != 1:
             frozen_fields = set(['product_qty', 'product_uom', 'product_uos_qty', 'product_uos', 'location_id', 'location_dest_id', 'product_id'])
             for move in self.browse(cr, uid, ids, context=context):
